@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
+from lele_quizzer.attempts import append_attempt, new_attempt
 from lele_quizzer.config import load_config
 from lele_quizzer.kb import inspect_knowledge_base, search_lessons
 from lele_quizzer.quiz import draft_questions
@@ -22,6 +23,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _kb_search(args)
     if args.command == "quiz" and args.quiz_command == "draft":
         return _quiz_draft(args)
+    if args.command == "quiz" and args.quiz_command == "play":
+        return _quiz_play(args)
 
     parser.error("unknown command")
     return 2
@@ -73,6 +76,18 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=5,
         help="Maximum number of draft questions. Default: 5.",
+    )
+
+    play_parser = quiz_subparsers.add_parser(
+        "play",
+        help="Play an interactive terminal quiz from a search query.",
+    )
+    play_parser.add_argument("query", help="Topic or text query to play from.")
+    play_parser.add_argument(
+        "--limit",
+        type=int,
+        default=3,
+        help="Maximum number of questions. Default: 3.",
     )
 
     return parser
@@ -145,10 +160,6 @@ def _kb_search(args: argparse.Namespace) -> int:
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
-
-
 def _quiz_draft(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     questions = draft_questions(
@@ -176,3 +187,52 @@ def _quiz_draft(args: argparse.Namespace) -> int:
         print()
 
     return 0
+
+
+def _quiz_play(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    questions = draft_questions(
+        config.knowledge_base,
+        args.query,
+        limit=args.limit,
+    )
+
+    attempts_path = config.quizzer.data_dir / "attempts.jsonl"
+
+    print("=== LeLe Quizzer quiz play ===")
+    print(f"query: {args.query}")
+    print(f"questions: {len(questions)}")
+    print(f"attempts: {attempts_path}")
+    print()
+
+    if not questions:
+        print("<no questions>")
+        return 0
+
+    for index, question in enumerate(questions, start=1):
+        print(f"Domanda {index}/{len(questions)}")
+        print(f"Fonte: {question.lesson_id}")
+        print(f"Topic: {question.topic}")
+        print(f"Q: {question.prompt}")
+        print()
+        answer = input("Risposta: ").strip()
+
+        attempt = new_attempt(
+            query=args.query,
+            lesson_id=question.lesson_id,
+            topic=question.topic,
+            title=question.title,
+            prompt=question.prompt,
+            answer=answer,
+        )
+        append_attempt(attempts_path, attempt)
+
+        print("[ok] Risposta salvata.")
+        print()
+
+    print("Quiz terminato.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
