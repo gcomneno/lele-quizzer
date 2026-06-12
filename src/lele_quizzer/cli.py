@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Sequence
 
-from lele_quizzer.attempts import append_attempt, new_attempt
+from lele_quizzer.attempts import append_attempt, load_attempts, new_attempt
 from lele_quizzer.config import load_config
 from lele_quizzer.kb import inspect_knowledge_base, search_lessons
 from lele_quizzer.quiz import draft_questions
@@ -25,6 +25,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _quiz_draft(args)
     if args.command == "quiz" and args.quiz_command == "play":
         return _quiz_play(args)
+    if args.command == "quiz" and args.quiz_command == "attempts":
+        return _quiz_attempts(args)
 
     parser.error("unknown command")
     return 2
@@ -88,6 +90,17 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=3,
         help="Maximum number of questions. Default: 3.",
+    )
+
+    attempts_parser = quiz_subparsers.add_parser(
+        "attempts",
+        help="Show saved quiz attempts.",
+    )
+    attempts_parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum number of attempts to show. Default: 10.",
     )
 
     return parser
@@ -236,3 +249,35 @@ def _quiz_play(args: argparse.Namespace) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def _quiz_attempts(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    attempts_path = config.quizzer.data_dir / "attempts.jsonl"
+    attempts = load_attempts(attempts_path, limit=args.limit)
+
+    print("=== LeLe Quizzer attempts ===")
+    print(f"path: {attempts_path}")
+    print(f"attempts: {len(attempts)}")
+    print()
+
+    if not attempts:
+        print("<no attempts>")
+        return 0
+
+    for index, attempt in enumerate(attempts, start=1):
+        answer = attempt.answer.replace("\n", " ")
+        if len(answer) > 160:
+            answer = answer[:157] + "..."
+
+        print(f"Tentativo {index}")
+        print(f"Quando: {attempt.created_at}")
+        print(f"Query: {attempt.query}")
+        print(f"Fonte: {attempt.lesson_id}")
+        print(f"Topic: {attempt.topic}")
+        print(f"Titolo: {attempt.title}")
+        print(f"Q: {attempt.prompt}")
+        print(f"A: {answer}")
+        print()
+
+    return 0
