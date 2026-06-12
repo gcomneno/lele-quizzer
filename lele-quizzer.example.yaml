@@ -1,0 +1,18 @@
+knowledge_base:
+  type: lele_manager_jsonl
+  path: /path/to/your/lele-manager/lessons.jsonl
+  id_column: id
+  text_column: text
+  topic_column: topic
+  tags_column: tags
+  title_column: title
+
+quizzer:
+  data_dir: ~/.local/share/lele-quizzer
+  default_question_count: 5
+  language: it
+
+rag:
+  backend: local_text_search
+  top_k: 5
+  min_score: 0.1

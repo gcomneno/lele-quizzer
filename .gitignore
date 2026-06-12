@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.tox/
+*.pyc
+
+# Local private config
+lele-quizzer.yaml
+*.local.yaml
+
+# Private/generated data
+data/
+quizzer_data/
+indexes/
+*.jsonl
+
+# OS/editor
+.DS_Store
+.vscode/

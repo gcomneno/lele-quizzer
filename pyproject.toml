@@ -1,0 +1,25 @@
+[project]
+name = "lele-quizzer"
+version = "0.1.0"
+description = "Trivial Pursuit-style quizzer for LeLe Manager knowledge bases."
+readme = "README.md"
+authors = [
+    { name = "Giancarlo Cicellyn Comneno", email = "giancarlo.cicellyn@gmail.com" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0.3",
+]
+
+[project.scripts]
+lele-quizzer = "lele_quizzer.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.11.16,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "ruff>=0.15.17",
+]
