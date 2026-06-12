@@ -6,6 +6,7 @@ from typing import Sequence
 
 from lele_quizzer.config import load_config
 from lele_quizzer.kb import inspect_knowledge_base, search_lessons
+from lele_quizzer.quiz import draft_questions
 
 
 DEFAULT_CONFIG = Path("lele-quizzer.yaml")
@@ -19,6 +20,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _kb_inspect(args)
     if args.command == "kb" and args.kb_command == "search":
         return _kb_search(args)
+    if args.command == "quiz" and args.quiz_command == "draft":
+        return _quiz_draft(args)
 
     parser.error("unknown command")
     return 2
@@ -53,6 +56,23 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=10,
         help="Maximum number of results. Default: 10.",
+    )
+
+    quiz_parser = subparsers.add_parser("quiz", help="Quiz commands.")
+    quiz_subparsers = quiz_parser.add_subparsers(dest="quiz_command", required=True)
+
+    draft_parser = quiz_subparsers.add_parser(
+        "draft",
+        help="Draft quiz questions from a search query.",
+    )
+    draft_parser.add_argument(
+        "query", help="Topic or text query to draft questions from."
+    )
+    draft_parser.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        help="Maximum number of draft questions. Default: 5.",
     )
 
     return parser
@@ -127,3 +147,32 @@ def _kb_search(args: argparse.Namespace) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def _quiz_draft(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    questions = draft_questions(
+        config.knowledge_base,
+        args.query,
+        limit=args.limit,
+    )
+
+    print("=== LeLe Quizzer quiz draft ===")
+    print(f"query: {args.query}")
+    print(f"questions: {len(questions)}")
+    print()
+
+    if not questions:
+        print("<no questions>")
+        return 0
+
+    for index, question in enumerate(questions, start=1):
+        print(f"Domanda {index}")
+        print(f"Fonte: {question.lesson_id}")
+        print(f"Topic: {question.topic}")
+        print(f"Titolo: {question.title}")
+        print(f"Q: {question.prompt}")
+        print(f"Contesto: {question.context_preview}")
+        print()
+
+    return 0
