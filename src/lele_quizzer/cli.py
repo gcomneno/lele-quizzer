@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Sequence
 
 from lele_quizzer.config import load_config
-from lele_quizzer.kb import inspect_knowledge_base
+from lele_quizzer.kb import inspect_knowledge_base, search_lessons
 
 
 DEFAULT_CONFIG = Path("lele-quizzer.yaml")
@@ -17,6 +17,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "kb" and args.kb_command == "inspect":
         return _kb_inspect(args)
+    if args.command == "kb" and args.kb_command == "search":
+        return _kb_search(args)
 
     parser.error("unknown command")
     return 2
@@ -38,7 +40,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     kb_parser = subparsers.add_parser("kb", help="Knowledge-base commands.")
     kb_subparsers = kb_parser.add_subparsers(dest="kb_command", required=True)
+
     kb_subparsers.add_parser("inspect", help="Inspect configured knowledge base.")
+
+    search_parser = kb_subparsers.add_parser(
+        "search",
+        help="Search lessons in the configured knowledge base.",
+    )
+    search_parser.add_argument("query", help="Text query to search for.")
+    search_parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Maximum number of results. Default: 10.",
+    )
 
     return parser
 
@@ -71,6 +86,41 @@ def _kb_inspect(args: argparse.Namespace) -> int:
         title = lesson.title or "-"
         topic = lesson.topic or "-"
         print(f"- {lesson.id} | topic={topic} | title={title}")
+
+    return 0
+
+
+def _kb_search(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    results = search_lessons(
+        config.knowledge_base,
+        args.query,
+        limit=args.limit,
+    )
+
+    print("=== LeLe Quizzer search ===")
+    print(f"query: {args.query}")
+    print(f"results: {len(results)}")
+    print()
+
+    if not results:
+        print("<no results>")
+        return 0
+
+    for result in results:
+        lesson = result.lesson
+        title = lesson.title or "-"
+        topic = lesson.topic or "-"
+        matched = ", ".join(result.matched_terms)
+        preview = lesson.text.replace("\n", " ")
+        if len(preview) > 160:
+            preview = preview[:157] + "..."
+
+        print(f"- {lesson.id} | score={result.score} | topic={topic}")
+        print(f"  title: {title}")
+        print(f"  matched: {matched}")
+        print(f"  preview: {preview}")
+        print()
 
     return 0
 
