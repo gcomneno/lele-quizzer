@@ -219,6 +219,7 @@ def _quiz_draft(args: argparse.Namespace) -> int:
         print(f"Domanda {index}")
         print(f"Fonte: {question.lesson_id}")
         print(f"Topic: {question.topic}")
+        print(f"Tipo: {question.question_type}")
         print(f"Titolo: {question.title}")
         print(f"Q: {question.prompt}")
         print(f"Contesto: {question.context_preview}")
@@ -251,6 +252,7 @@ def _quiz_play(args: argparse.Namespace) -> int:
         print(f"Domanda {index}/{len(questions)}")
         print(f"Fonte: {question.lesson_id}")
         print(f"Topic: {question.topic}")
+        print(f"Tipo: {question.question_type}")
         print(f"Q: {question.prompt}")
         print()
         answer = input("Risposta: ").strip()
@@ -260,6 +262,7 @@ def _quiz_play(args: argparse.Namespace) -> int:
             lesson_id=question.lesson_id,
             topic=question.topic,
             title=question.title,
+            question_type=question.question_type,
             prompt=question.prompt,
             answer=answer,
         )
@@ -297,6 +300,7 @@ def _quiz_attempts(args: argparse.Namespace) -> int:
         print(f"Fonte: {attempt.lesson_id}")
         print(f"Topic: {attempt.topic}")
         print(f"Titolo: {attempt.title}")
+        print(f"Tipo: {attempt.question_type}")
         print(f"Q: {attempt.prompt}")
         print(f"A: {answer}")
         print()
