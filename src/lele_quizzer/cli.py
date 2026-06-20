@@ -1,10 +1,16 @@
 from __future__ import annotations
 
+from collections import Counter
 import argparse
 from pathlib import Path
 from typing import Sequence
 
-from lele_quizzer.attempts import append_attempt, load_attempts, new_attempt
+from lele_quizzer.attempts import (
+    append_attempt,
+    load_attempts,
+    new_attempt,
+    summarize_attempts,
+)
 from lele_quizzer.config import load_config
 from lele_quizzer.kb import inspect_knowledge_base, search_lessons
 from lele_quizzer.quiz import draft_questions
@@ -27,6 +33,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return _quiz_play(args)
     if args.command == "quiz" and args.quiz_command == "attempts":
         return _quiz_attempts(args)
+    if args.command == "quiz" and args.quiz_command == "weaknesses":
+        return _quiz_weaknesses(args)
 
     parser.error("unknown command")
     return 2
@@ -101,6 +109,23 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=10,
         help="Maximum number of attempts to show. Default: 10.",
+    )
+
+    weaknesses_parser = quiz_subparsers.add_parser(
+        "weaknesses",
+        help="Summarize saved quiz attempts.",
+    )
+    weaknesses_parser.add_argument(
+        "--limit",
+        type=int,
+        default=50,
+        help="Maximum number of recent attempts to summarize. Default: 50.",
+    )
+    weaknesses_parser.add_argument(
+        "--top",
+        type=int,
+        default=10,
+        help="Maximum number of rows per section. Default: 10.",
     )
 
     return parser
@@ -247,10 +272,6 @@ def _quiz_play(args: argparse.Namespace) -> int:
     return 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
-
-
 def _quiz_attempts(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     attempts_path = config.quizzer.data_dir / "attempts.jsonl"
@@ -281,3 +302,36 @@ def _quiz_attempts(args: argparse.Namespace) -> int:
         print()
 
     return 0
+
+
+def _quiz_weaknesses(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    attempts_path = config.quizzer.data_dir / "attempts.jsonl"
+    summary = summarize_attempts(attempts_path, limit=args.limit)
+
+    print("=== LeLe Quizzer weaknesses ===")
+    print(f"path: {attempts_path}")
+    print(f"attempts: {summary.total_attempts}")
+    print(f"limit: {args.limit}")
+    print()
+
+    if summary.total_attempts == 0:
+        print("<no attempts>")
+        return 0
+
+    _print_counter_section("Topics", summary.topics, args.top)
+    _print_counter_section("Lessons", summary.lesson_ids, args.top)
+    _print_counter_section("Queries", summary.queries, args.top)
+
+    return 0
+
+
+def _print_counter_section(title: str, counter: Counter[str], top: int) -> None:
+    print(f"=== {title} ===")
+    for value, count in counter.most_common(top):
+        print(f"{count:3}  {value}")
+    print()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

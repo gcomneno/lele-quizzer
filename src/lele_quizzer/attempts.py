@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,6 +17,14 @@ class QuizAttempt:
     title: str
     prompt: str
     answer: str
+
+
+@dataclass(frozen=True)
+class WeaknessSummary:
+    total_attempts: int
+    topics: Counter[str]
+    lesson_ids: Counter[str]
+    queries: Counter[str]
 
 
 def new_attempt(
@@ -71,6 +80,17 @@ def load_attempts(path: Path, *, limit: int | None = None) -> list[QuizAttempt]:
     return attempts[-limit:]
 
 
+def summarize_attempts(path: Path, *, limit: int | None = None) -> WeaknessSummary:
+    attempts = load_attempts(path, limit=limit)
+
+    return WeaknessSummary(
+        total_attempts=len(attempts),
+        topics=Counter(_visible_value(attempt.topic) for attempt in attempts),
+        lesson_ids=Counter(_visible_value(attempt.lesson_id) for attempt in attempts),
+        queries=Counter(_visible_value(attempt.query) for attempt in attempts),
+    )
+
+
 def _attempt_from_raw(raw: dict[str, Any]) -> QuizAttempt:
     return QuizAttempt(
         created_at=str(raw.get("created_at", "")),
@@ -81,3 +101,7 @@ def _attempt_from_raw(raw: dict[str, Any]) -> QuizAttempt:
         prompt=str(raw.get("prompt", "")),
         answer=str(raw.get("answer", "")),
     )
+
+
+def _visible_value(value: str) -> str:
+    return value if value else "<missing>"
