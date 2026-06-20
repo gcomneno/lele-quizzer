@@ -15,6 +15,7 @@ class QuizAttempt:
     lesson_id: str
     topic: str
     title: str
+    question_type: str
     prompt: str
     answer: str
 
@@ -33,6 +34,7 @@ def new_attempt(
     lesson_id: str,
     topic: str,
     title: str,
+    question_type: str,
     prompt: str,
     answer: str,
 ) -> QuizAttempt:
@@ -42,6 +44,7 @@ def new_attempt(
         lesson_id=lesson_id,
         topic=topic,
         title=title,
+        question_type=question_type,
         prompt=prompt,
         answer=answer,
     )
@@ -98,6 +101,7 @@ def _attempt_from_raw(raw: dict[str, Any]) -> QuizAttempt:
         lesson_id=str(raw.get("lesson_id", "")),
         topic=str(raw.get("topic", "")),
         title=str(raw.get("title", "")),
+        question_type=str(raw.get("question_type", "open_explanation")),
         prompt=str(raw.get("prompt", "")),
         answer=str(raw.get("answer", "")),
     )
